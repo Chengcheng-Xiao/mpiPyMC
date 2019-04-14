@@ -46,8 +46,9 @@ chmod 755 MC_MPI.py
 
 3. change parameters inside the code and run it by:
 ```
-./MC_MPI.py
+mpirun -np XX MC_MPI.py
 ```
+XX is for number of processes.
 
 ## Adjustable variables
 
@@ -55,7 +56,7 @@ All adjustable variables are currently located inside the code. This will change
 
 | NAME                   | REQURE                                     |
 |:----------------------:|:------------------------------------------:|
-| `nt`                   | [number of Temperature point]                  |
+| `nt`                   | [number of Temperature point, should be integer number of the CPU used]                  |
 | `N`                    | [number of cell in onedirection, total number of cell  =N*N]              |
 | `eqSteps`              | [number of MC steps to get to equilibrium]              |
 | `mcSteps`              | [number of MC steps to use for average]                        |
