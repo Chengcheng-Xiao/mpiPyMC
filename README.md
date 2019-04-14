@@ -14,7 +14,10 @@ These instructions will get you a copy of the project up and running on your mac
 
 ### Prerequisites
 
-For the script to work, you need to have an valid installation of `python` (2.7.x or 3.x both work).
+For the script to work, you need to have an valid installation of `python` (2.7.x or 3.x both work), and a MPI installation:
+openmpi:[LINK](https://www.open-mpi.org/)
+MPICH:[LINK](https://www.mpich.org/)
+intelmpi:[LINK](https://software.intel.com/en-us/mpi-library)
 Also, `numpy`, `matplotlib` and `mpi4py` package are needed, you can install them by pip:
 ```
 pip install matplotlib numpy mpi4py
@@ -48,13 +51,13 @@ chmod 755 MC_MPI.py
 ```
 mpirun -np XX MC_MPI.py
 ```
-XX is for number of processes.
+`XX` is for number of processes.
 
 ## Adjustable variables
 
 All adjustable variables are currently located inside the code. This will change in the future revisions.
 
-| NAME                   | REQURE                                     |
+| NAME                   | REQUIRE                                     |
 |:----------------------:|:------------------------------------------:|
 | `nt`                   | [number of Temperature point, should be integer number of the CPU used]                  |
 | `N`                    | [number of cell in onedirection, total number of cell  =N*N]              |
@@ -66,9 +69,9 @@ All adjustable variables are currently located inside the code. This will change
 
 
 ## Example
-In the `example` folder, I have included three examples for mentioned reference papers. The systems are: `SnSe`, `b-GeSe` and `SnTe`.
+In the `example` folder, I have included three examples for mentioned reference papers. The systems are: `SnSe`, `ß-GeSe` and `SnTe`.
 
-I was not able to reproduce the result for `SnSe` and `b-GeSe`.
+I was not able to reproduce the result for `SnSe` and `ß-GeSe`.
 The calculated `SnTe` results agree with [said paper](https://aip.scitation.org/doi/10.1063/1.4996171).
 
 Analysis of possible errors are presented inside each folder separately.
@@ -76,10 +79,11 @@ Analysis of possible errors are presented inside each folder separately.
 ## Note
 This code is based on [🔗LINK](https://rajeshrinet.github.io/blog/2014/ising-model/)
 
-## Future development plane
+## Future development plan
 1. Add total energy plot, specific heat plot and susceptibility plot function.
 2. Better MPI implementation?
 3. Snap shot of specific one (or several) MC steps.
+4. Hysteresis
 
 ## License
   This project is licensed under the GNU License - see the `LICENSE.md` for details
