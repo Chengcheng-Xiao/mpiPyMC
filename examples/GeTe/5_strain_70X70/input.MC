@@ -1,0 +1,11 @@
+nt          = 44
+N           = 70
+eqSteps     = 100000
+mcSteps     = 200000
+A_data      = -24.997
+B_data      = -9.493
+C_data      = 0.920
+D_data      = 8.642
+ps          = 4.845
+T_low       = 900
+T_high      = 1500

@@ -1,0 +1,11 @@
+nt          = 18
+N           = 16
+eqSteps     = 2000
+mcSteps     = 2000
+A_data      = -5.785
+B_data      = 1.705
+C_data      = 0.317
+D_data      = 10.16
+ps          = 1.51
+T_low       = 0.01
+T_high      = 400

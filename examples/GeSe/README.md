@@ -15,3 +15,14 @@ two times higher than the provided coupling coefficient.
 2. Despite the difference between the the coupling plot and provided coupling coefficient, using mpiPyMC, I am able to plot the phase transition identical to the paper and get same T_c for FE to turn PE.
 
 ![FIG.2](./fig/FIG2.png)
+
+## Parameters
+| NAME                   | DATA                                     |
+|:----------------------:|:------------------------------------------:|
+| `nt`                   | 18                 |
+| `N`                    | 30              |
+| `eqSteps`              | 8000              |
+| `mcSteps`              | 4000                        |
+| `A_data``B_data``C_data``D_data`| -15.261, 1.8389, 1.7137, 8.0904                    |
+| `ps`                   | 1.59             |
+| `T`                    | 0.01, 400             |

@@ -1,6 +1,6 @@
 # mpiPyMC
 
-A python based, MPI enabled, Monte-Carlo calculation of  2D ferroelectric system using Metropolis algorithm.
+A python based, MPI enabled, Monte-Carlo calculation of  2D Ising system using Metropolis algorithm.
 
 Before getting into things, you might want to check out these papers:
 
@@ -15,9 +15,12 @@ These instructions will get you a copy of the project up and running on your mac
 ### Prerequisites
 
 For the script to work, you need to have an valid installation of `python` (2.7.x or 3.x both work), and a MPI installation:
-openmpi:[LINK](https://www.open-mpi.org/)
-MPICH:[LINK](https://www.mpich.org/)
-intelmpi:[LINK](https://software.intel.com/en-us/mpi-library)
+```
+openmpi:https://www.open-mpi.org/
+MPICH:https://www.mpich.org/
+intelmpi:https://software.intel.com/en-us/mpi-library
+```
+
 Also, `numpy`, `matplotlib` and `mpi4py` package are needed, you can install them by pip:
 ```
 pip install matplotlib numpy mpi4py
@@ -39,51 +42,96 @@ Python script does not need manual compilation, so the installation is very easy
 
 1. Download the script:
 ```
-wget https://github.com/Chengcheng-Xiao/mpiPyMC/blob/master/MC_MPI.py
+wget https://github.com/Chengcheng-Xiao/mpiPyMC/blob/master/MC_MPI*.py
 ```
 
 2. give correct permission:
 ```
-chmod 755 MC_MPI.py
+chmod 755 MC_MPI*.py
 ```
 
 3. change parameters inside the code and run it by:
 ```
-mpirun -np XX MC_MPI.py
+mpirun -np XX MC_MPI*.py
 ```
 `XX` is for number of processes.
 
-## Adjustable variables
+### FE and Ising difference
+This project provide two different script for two different tasks:
+1. `MC_MPI.py`: for adjustable spin. Utilize Sigma^4 Model:
+```
+E=∑[(A/2)*P_i^2+(B/4)*P_i^4+(C/6)*P_i^6]+∑[(D/2)*(P_i-<P_j>)^2]
+```
+where i and j are nearest neighbor.
 
-All adjustable variables are currently located inside the code. This will change in the future revisions.
+2. `MC_MPI_Ising.py`: for spin = +1 or -1. Utilize Heisenberg Model:
+```
+E=∑[(D)*P_i*P_j]
+```
+where i and j are nearest neighbor.
 
-| NAME                   | REQUIRE                                     |
-|:----------------------:|:------------------------------------------:|
-| `nt`                   | [number of Temperature point, should be integer number of the CPU used]                  |
-| `N`                    | [number of cell in onedirection, total number of cell  =N*N]              |
-| `eqSteps`              | [number of MC steps to get to equilibrium]              |
-| `mcSteps`              | [number of MC steps to use for average]                        |
-| `A_data``B_data``C_data``D_data`| [model data]                    |
-| `ps`                   | [spontaneous polarization value]             |
-| `T`                    | [temperature range]             |
 
+## Input File
+
+All adjustable variables should be written in `input.MC` file.
+
+FOR `MC_MPI.py`:
+
+| NAME                   |  DEFAULT     |MEANING                                     |
+|:----------------------:|:---------------:|:---------------------------:|
+| `nt`                   |        18       |[number of Temperature point, should be integer number of the CPU used]                  |
+| `N`                    |        16       |[number of cell in onedirection, total number of cell  =N*N]              |
+| `eqSteps`              |       2000      |[number of MC steps to get to equilibrium]              |
+| `mcSteps`              |       2000      |[number of MC steps to use for average]                        |
+| `A_data`               |      -8.021     |[model data]                    |
+| `B_data`               |      0.620      |[model data]                    |
+| `C_data`               |      0.441      |[model data]                    |
+| `D_data`               |        4.5      |[model data]                    |
+| `ps`                   |     1.867       |[spontaneous polarization value]             |
+| `T_low`                |        0.01     |[temperature range]             |
+| `T_high`               |        300      |[temperature range]             |
+
+
+FOR `MC_MPI_Ising.py`:
+
+| NAME                   |  DEFAULT     |MEANING                                     |
+|:----------------------:|:---------------:|:---------------------------:|
+| `nt`                   |        18       |[number of Temperature point, should be integer number of the CPU used]                  |
+| `N`                    |        16       |[number of cell in onedirection, total number of cell  =N*N]              |
+| `eqSteps`              |       8000      |[number of MC steps to get to equilibrium]              |
+| `mcSteps`              |       4000      |[number of MC steps to use for average]                        |
+| `D_data`               |        1.0      |[model data]                    |
+| `T_low`                |        1.53     |[temperature range]  assuming K_b=1           |
+| `T_high`               |        3.28      |[temperature range] assuming K_b=1            |
+
+
+
+### Output
+`MC_MPI.py` will output picture `MC.png` and data `Polarization.txt`, containing Polarization vs Temperature plot and the raw data to generate the plot, respectively.
+
+`MC_MPI_Ising.py` will output picture `MC.png` containing total energy plot, specific heat plot, susceptibility plot and Polarization vs Temperature plot.
+as well as their raw data `Energy.txt`, `Polarization.txt`, `Specific_Heat.txt`, `Susceptibility.txt`
 
 ## Example
-In the `example` folder, I have included three examples for mentioned reference papers. The systems are: `SnSe`, `ß-GeSe` and `SnTe`.
+### `MC_MPI` example
+In the `example` folder, I have included three examples for mentioned reference papers. The systems are: `SnSe`, `ß-GeSe`, `SnTe` and `GeTe`.
 
 I was not able to reproduce the result for `SnSe` and `ß-GeSe`.
-The calculated `SnTe` results agree with [said paper](https://aip.scitation.org/doi/10.1063/1.4996171).
+The calculated results for`SnTe` and `GeTe` agree with [said paper](https://aip.scitation.org/doi/10.1063/1.4996171).
 
 Analysis of possible errors are presented inside each folder separately.
 
+### `MC_MPI_Ising` example
+In the `example_Ising` folder, I have included three calculations of Ising model. each with different cell size: 16X16, 30X30 and 50X50.
+
 ## Note
-This code is based on [🔗LINK](https://rajeshrinet.github.io/blog/2014/ising-model/)
+This code is based on rajeshrinet's work: [🔗LINK](https://rajeshrinet.github.io/blog/2014/ising-model/)
 
 ## Future development plan
-1. Add total energy plot, specific heat plot and susceptibility plot function.
-2. Better MPI implementation?
-3. Snap shot of specific one (or several) MC steps.
-4. Hysteresis
+1. Add total energy plot, specific heat plot and susceptibility plot function for `MC_MPI.py`.
+2. Better MPI implementation with respect to CPU number, or use OpenMP?
+3. Snap shot of specified one (or several) MC step(s).
+4. Hysteresis.
 
 ## License
-  This project is licensed under the GNU License - see the `LICENSE.md` for details
+  This project is licensed under the MIT License - see the [LICENSE.md](./LICENSE.md) for details
