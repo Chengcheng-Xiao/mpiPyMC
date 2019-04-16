@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
 from __future__ import division
+from tqdm import tqdm
 import numpy as np
 from numpy.random import rand
 import matplotlib
@@ -57,29 +58,28 @@ def initialstate(N,ps):
 
 def mcmove(config, beta, ps, A_data, B_data, C_data, D_data):
     '''Monte Carlo move using Metropolis algorithm '''
-    for i in range(N):
-        for j in range(N):
-                a = np.random.randint(0, N)
-                b = np.random.randint(0, N)
-                # Nearest neighbour mean value
-                nb = (config[(a+1)%N,b] + config[a,(b+1)%N] + config[(a-1)%N,b] + config[a,(b-1)%N])/4.
-                # site polarization before change
-                s =  config[a, b]
-                # site polarization after change, note here I constrain the max polarization to be 2*ps.
-                s1 = np.random.uniform(-2*ps,2*ps)
-                # unitcell energy before and after
-                cost_unitcell_orig = A_data/2.*s**2.+B_data/4.*s**4.+C_data/6.*s**6.
-                cost_unitcell_change = A_data/2.*s1**2.+B_data/4.*s1**4.+C_data/6.*s1**6.
-                # coupling energy before and after
-                cost_coupling_orig = 4.*(D_data/2.)*(s-nb)**2.
-                cost_coupling_change = 4.*(D_data/2.)*(s1-nb)**2.
-		        # Calculate total energy change
-                cost = (cost_unitcell_change + cost_coupling_change) - (cost_unitcell_orig + cost_coupling_orig)
-                if cost < 0:
-                    s = s1
-                elif rand() < np.exp(-cost*beta):
-                    s = s1
-                config[a, b] = s
+    for i in range(N*N):
+        a = np.random.randint(0, N)
+        b = np.random.randint(0, N)
+        # Nearest neighbour mean value
+        nb = (config[(a+1)%N,b] + config[a,(b+1)%N] + config[(a-1)%N,b] + config[a,(b-1)%N])/4.
+        # site polarization before change
+        s =  config[a, b]
+        # site polarization after change, note here I constrain the max polarization to be 2*ps.
+        s1 = np.random.uniform(-2*ps,2*ps)
+        # unitcell energy before and after
+        cost_unitcell_orig = A_data/2.*s**2.+B_data/4.*s**4.+C_data/6.*s**6.
+        cost_unitcell_change = A_data/2.*s1**2.+B_data/4.*s1**4.+C_data/6.*s1**6.
+        # coupling energy before and after
+        cost_coupling_orig = 4.*(D_data/2.)*(s-nb)**2.
+        cost_coupling_change = 4.*(D_data/2.)*(s1-nb)**2.
+	   	# Calculate total energy change
+        cost = (cost_unitcell_change + cost_coupling_change) - (cost_unitcell_orig + cost_coupling_orig)
+        if cost < 0:
+            s = s1
+        elif rand() < np.exp(-cost*beta):
+            s = s1
+        config[a, b] = s
     return config
 
 def calcMag(config):
@@ -103,23 +103,49 @@ n1, n2          = 1.0/(mcSteps*N*N), 1.0/(mcSteps*mcSteps*N*N)
 #----------------------------------------------------------------------
 
 # automatically convert number of temperature steps to be devideable by "size"
-for tt in range(int(nt*rank/size),int(nt*(rank+1)/size)):
-    E1 = M1 = E2 = M2 = 0
-    config = initialstate(N, ps)
-    iT=1.0/(T[tt]*0.08617)
+if rank == 0:
+    print("                  _ ____        __  __  ____ \n"
+    "  _ __ ___  _ __ (_)  _ \ _   _|  \/  |/ ___|\n"
+    " | '_ ` _ \| '_ \| | |_) | | | | |\/| | |    \n"
+    " | | | | | | |_) | |  __/| |_| | |  | | |___ \n"
+    " |_| |_| |_| .__/|_|_|    \__, |_|  |_|\____|\n"
+    "           |_|            |___/              \n")
+    for tt in tqdm(range(int(nt*rank/size),int(nt*(rank+1)/size)),desc="total_%:",ncols=100):
+        E1 = M1 = E2 = M2 = 0
+        config = initialstate(N, ps)
+        iT=1.0/(T[tt]*0.08617)
 
-    for i in range(eqSteps):         # equilibrate
-        mcmove(config, iT, ps, A_data, B_data, C_data, D_data)           # Monte Carlo moves
+        for i in tqdm(range(eqSteps),desc="Eq_steps",leave=False,ncols=100):         # equilibrate
+            mcmove(config, iT, ps, A_data, B_data, C_data, D_data)           # Monte Carlo moves
 
-    for i in range(mcSteps):
-        mcmove(config, iT, ps, A_data, B_data, C_data, D_data)
-        Mag = calcMag(config)        # calculate the magnetisation
+        for i in tqdm(range(mcSteps),desc="MC_steps",leave=False,ncols=100):
+            mcmove(config, iT, ps, A_data, B_data, C_data, D_data)
+            Mag = calcMag(config)        # calculate the magnetisation
 
-        M1 = M1 + Mag
-    #average Polarization
-    M_1[tt] = n1*M1
+            M1 = M1 + Mag
+        #average Polarization
+        M_1[tt] = n1*M1
 
-comm.send(M_1,dest=0,tag=rank)
+    comm.send(M_1,dest=0,tag=rank)
+
+if rank != 0:
+    for tt in range(int(nt*rank/size),int(nt*(rank+1)/size)):
+        E1 = M1 = E2 = M2 = 0
+        config = initialstate(N, ps)
+        iT=1.0/(T[tt]*0.08617)
+
+        for i in range(eqSteps):         # equilibrate
+            mcmove(config, iT, ps, A_data, B_data, C_data, D_data)           # Monte Carlo moves
+
+        for i in range(mcSteps):
+            mcmove(config, iT, ps, A_data, B_data, C_data, D_data)
+            Mag = calcMag(config)        # calculate the magnetisation
+
+            M1 = M1 + Mag
+        #average Polarization
+        M_1[tt] = n1*M1
+
+    comm.send(M_1,dest=0,tag=rank)
 
 if rank == 0:
     for i in range(0,size):
@@ -138,3 +164,4 @@ if rank == 0:
     plt.ylabel("Magnetization ", fontsize=20);   plt.axis('tight');
 
     plt.savefig("MC.png")
+    print(" Done.")

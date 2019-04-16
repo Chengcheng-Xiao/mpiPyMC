@@ -21,13 +21,13 @@ MPICH:https://www.mpich.org/
 intelmpi:https://software.intel.com/en-us/mpi-library
 ```
 
-Also, `numpy`, `matplotlib` and `mpi4py` package are needed, you can install them by pip:
+Also, `numpy`, `matplotlib`, `tqdm` and `mpi4py` package are needed, you can install them by pip:
 ```
-pip install matplotlib numpy mpi4py
+pip install matplotlib numpy mpi4py tqdm
 ```
 or by conda
 ```
-conda install matplotlib numpy mpi4py
+conda install matplotlib numpy mpi4py tqdm
 ```
 if you use a supercomputer and don't have enough privilege:
 
