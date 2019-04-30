@@ -56,7 +56,7 @@ mpirun -np XX MC_MPI*.py
 ```
 `XX` is for number of processes.
 
-### FE and Ising difference
+### Adjustable spin (polarization vector)
 This project provide two different script for two different tasks:
 1. `MC_MPI.py`: for adjustable spin. Utilize Sigma^4 Model:
 ```
@@ -119,7 +119,7 @@ In the `example` folder, I have included three examples for mentioned reference 
 I was not able to reproduce the result for `SnSe` and `ß-GeSe`.
 The calculated results for`SnTe` and `GeTe` agree with [said paper](https://aip.scitation.org/doi/10.1063/1.4996171).
 
-Analysis of possible errors are presented inside each folder separately.
+Analysis of possible errors are presented inside each folder separately. In short, the definition of nearest neighbor is very important. However, no explanations were made in these referenced paper. The coupling coefficient D should be calculated via changing one cell's polarization in a supercell configuration. The coupling plot should be calculated by subtracting the site energy from the total energy.
 
 ### `MC_MPI_Ising` example
 In the `example_Ising` folder, I have included three calculations of Ising model. each with different cell size: 16X16, 30X30 and 50X50.

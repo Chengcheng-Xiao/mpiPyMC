@@ -110,7 +110,7 @@ if rank == 0:
     " | | | | | | |_) | |  __/| |_| | |  | | |___ \n"
     " |_| |_| |_| .__/|_|_|    \__, |_|  |_|\____|\n"
     "           |_|            |___/              \n")
-    for tt in tqdm(range(int(nt*rank/size),int(nt*(rank+1)/size)),desc="total_%:",ncols=100):
+    for tt in tqdm(range(int(nt*rank/size),int(nt*(rank+1)/size)),desc="total_% ",ncols=100):
         E1 = M1 = E2 = M2 = 0
         config = initialstate(N, ps)
         iT=1.0/(T[tt]*0.08617)
