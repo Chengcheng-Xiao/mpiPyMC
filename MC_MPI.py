@@ -1,4 +1,11 @@
 #!/usr/bin/env python
+"""
+Calculate 2D Ising model using Metropolis Monte-Carlo method.
+*Site variable*
+Depends on numpy, metaplotlib, tqdm and mpi4py
+"""
+
+#Import library
 from __future__ import print_function
 from __future__ import division
 from tqdm import tqdm
@@ -8,18 +15,17 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
+# Initialize MPI part
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
 
 #----------------------------------------------------------------------
-##  BLOCK OF FUNCTIONS USED IN THE MAIN CODE
+#  BLOCK OF FUNCTIONS USED IN THE MAIN CODE
 #----------------------------------------------------------------------
 def read_input():
-
-    ''' a subroutine to get AO and MO number and number of kpoints and otehr information from input.woops'''
-
+    ''' a subroutine to get information from input.MC'''
     dataset={}
     file = open('input.MC', "r")
     #Default
@@ -36,7 +42,7 @@ def read_input():
     for line in data:
         key, value = line.split("=")
         dataset[key.strip()] = value.strip()
-    # Read data
+    # Read in data
     nt          = int(dataset["nt"])
     N           = int(dataset["N"])
     eqSteps     = int(dataset["eqSteps"])
@@ -87,16 +93,17 @@ def calcMag(config):
     mag = np.abs(np.sum(config))
     return mag
 
-#########################################################################
-# Here comes the Model parameters
-#########################################################################
+#----------------------------------------------------------------------
+#  Initialize Model parameters
+#----------------------------------------------------------------------
 nt, N, eqSteps, mcSteps, A_data, B_data, C_data, D_data, ps, T_low, T_high = read_input()
-#########################################################################
+#----------------------------------------------------------------------
 T               = np.linspace(T_low, T_high, nt);
 E,M,C,X         = np.zeros(nt), np.zeros(nt), np.zeros(nt), np.zeros(nt)
 E_1,M_1,C_1,X_1 = np.zeros(nt), np.zeros(nt), np.zeros(nt), np.zeros(nt)
 n1, n2          = 1.0/(mcSteps*N*N), 1.0/(mcSteps*mcSteps*N*N)
 # divide by number of samples, and by system size to get intensive values
+
 
 #----------------------------------------------------------------------
 #  MAIN PART OF THE CODE
@@ -128,6 +135,7 @@ if rank == 0:
 
     comm.send(M_1,dest=0,tag=rank)
 
+# will not print out prograss bar for subprocess since they shall not differ to rank 0 very much.
 if rank != 0:
     for tt in range(int(nt*rank/size),int(nt*(rank+1)/size)):
         E1 = M1 = E2 = M2 = 0
@@ -154,9 +162,10 @@ if rank == 0:
     # Write data to Polarization.txt
     with open('Polarization.txt', 'w') as f:
             for i in range(nt):
-                print("{0:4d} {1:5f}".format(i,M[i]),file=f)
+                print("{0:2f} {1:5f}".format(T[i],M[i]),file=f)
 
-# Plotting ....
+# Plotting
+print("Plotting...")
     f = plt.figure(figsize=(18, 10)); # plot the calculated values
 
     plt.scatter(T, abs(M), s=50, marker='o', color='RoyalBlue')

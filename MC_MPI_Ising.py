@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+"""
+Calculate 2D Ising model using Metropolis Monte-Carlo method.
+*site fixed*
+Depends on numpy, metaplotlib, tqdm and mpi4py
+"""
+
+#Import library
 from __future__ import print_function
 from __future__ import division
 import numpy as np
@@ -6,6 +14,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
+# Initialize MPI part
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -15,9 +24,7 @@ size = comm.Get_size()
 ##  BLOCK OF FUNCTIONS USED IN THE MAIN CODE
 #----------------------------------------------------------------------
 def read_input():
-
-    ''' a subroutine to get AO and MO number and number of kpoints and otehr information from input.woops'''
-
+    ''' a subroutine to get information from input.MC'''
     dataset={}
     file = open('input.MC', "r")
     #Default
@@ -83,12 +90,12 @@ def calcMag(config):
     mag = np.abs(np.sum(config))
     return mag
 
-#########################################################################
-# Here comes the Model parameters
-#########################################################################
-## change these parameters for a smaller (faster) simulation
+#----------------------------------------------------------------------
+#  Initialize Model parameters
+#----------------------------------------------------------------------
+# change these parameters for a smaller (faster) simulation
 nt, N, eqSteps, mcSteps, D_data, T_low, T_high = read_input()
-#########################################################################
+#----------------------------------------------------------------------
 T       = np.linspace(T_low, T_high, nt);
 E,M,C,X = np.zeros(nt), np.zeros(nt), np.zeros(nt), np.zeros(nt)
 E_1,M_1,C_1,X_1 = np.zeros(nt), np.zeros(nt), np.zeros(nt), np.zeros(nt)
