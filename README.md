@@ -54,7 +54,7 @@ chmod 755 MC_MPI*.py
 ```
 mpirun -np XX MC_MPI*.py
 ```
-`XX` is for number of processes.
+`XX` is for number of processes (please keep XX < the number of temperature points).
 
 ### Adjustable spin (polarization vector)
 This project provide two different script for two different tasks:
