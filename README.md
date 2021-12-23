@@ -36,6 +36,13 @@ if you use a supercomputer and don't have enough privilege:
 3. install `numpy`, `h5py` and `mpi4py` by download them from [here](https://anaconda.org/anaconda/repo) upload them as well.
 4. manually install package by `conda install *package_name*.tar.bz2`
 
+Version of dependencies tested:
+ - python = 3.8
+ - matplotlib = 3.5.0
+ - numpy = 1.21.2
+ - mpi4py = 3.0.3
+ - tqdm = 4.62.3
+
 ### Installing
 
 Python script does not need manual compilation, so the installation is very easy.
@@ -54,7 +61,7 @@ chmod 755 MC_MPI*.py
 ```
 mpirun -np XX MC_MPI*.py
 ```
-`XX` is for number of processes (please keep XX < the number of temperature points).
+`XX` is for number of processes (please keep XX <= the number of temperature points+1).
 
 ### Adjustable spin (polarization vector)
 This project provide two different script for two different tasks:
