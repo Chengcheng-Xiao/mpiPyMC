@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
 from __future__ import division
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import numpy as np
 from numpy.random import rand
 import matplotlib
@@ -73,7 +73,7 @@ def mcmove(config, beta, ps, A_data, B_data, C_data, D_data):
         # coupling energy before and after
         cost_coupling_orig = 4.*(D_data/2.)*(s-nb)**2.
         cost_coupling_change = 4.*(D_data/2.)*(s1-nb)**2.
-	   	# Calculate total energy change
+        # Calculate total energy change
         cost = (cost_unitcell_change + cost_coupling_change) - (cost_unitcell_orig + cost_coupling_orig)
         if cost < 0:
             s = s1
@@ -102,6 +102,12 @@ n1, n2          = 1.0/(mcSteps*N*N), 1.0/(mcSteps*mcSteps*N*N)
 #  MAIN PART OF THE CODE
 #----------------------------------------------------------------------
 
+# exit if we have more processes then the number of temperature points
+if nt < size-1:
+    if rank == 0:
+        print('**ERROR: More processes then the number of temperatrue points.')
+    exit()
+
 # automatically convert number of temperature steps to be devideable by "size"
 if rank == 0:
     print("                  _ ____        __  __  ____ \n"
@@ -110,47 +116,64 @@ if rank == 0:
     " | | | | | | |_) | |  __/| |_| | |  | | |___ \n"
     " |_| |_| |_| .__/|_|_|    \__, |_|  |_|\____|\n"
     "           |_|            |___/              \n")
-    for tt in tqdm(range(int(nt*rank/size),int(nt*(rank+1)/size)),desc="total_% ",ncols=100):
-        E1 = M1 = E2 = M2 = 0
-        config = initialstate(N, ps)
-        iT=1.0/(T[tt]*0.08617)
-
-        for i in tqdm(range(eqSteps),desc="Eq_steps",leave=False,ncols=100):         # equilibrate
-            mcmove(config, iT, ps, A_data, B_data, C_data, D_data)           # Monte Carlo moves
-
-        for i in tqdm(range(mcSteps),desc="MC_steps",leave=False,ncols=100):
-            mcmove(config, iT, ps, A_data, B_data, C_data, D_data)
-            Mag = calcMag(config)        # calculate the magnetisation
-
-            M1 = M1 + Mag
-        #average Polarization
-        M_1[tt] = n1*M1
-
-    comm.send(M_1,dest=0,tag=rank)
+    pbar = tqdm(total=nt*(eqSteps+mcSteps),desc="total_% ")
+    # for tt in tqdm(range(int(nt*rank/size),int(nt*(rank+1)/size)),desc="total_% ",ncols=100):
+    #     E1 = M1 = E2 = M2 = 0
+    #     config = initialstate(N, ps)
+    #     iT=1.0/(T[tt]*0.08617)
+    #
+    #     for i in range(eqSteps):
+    #     # for i in tqdm(range(eqSteps),desc="Eq_steps",leave=False,ncols=100):         # equilibrate
+    #         mcmove(config, iT, ps, A_data, B_data, C_data, D_data)           # Monte Carlo moves
+    #
+    #     for i in range(mcSteps):
+    #     # for i in tqdm(range(mcSteps),desc="MC_steps",leave=False,ncols=100):
+    #         mcmove(config, iT, ps, A_data, B_data, C_data, D_data)
+    #         Mag = calcMag(config)        # calculate the magnetisation
+    #
+    #         M1 = M1 + Mag
+    #     #average Polarization
+    #     M_1[tt] = n1*M1
+    #
+    # comm.send(M_1,dest=0,tag=rank)
 
 if rank != 0:
-    for tt in range(int(nt*rank/size),int(nt*(rank+1)/size)):
+    for tt in range(int(nt*(rank-1)/(size-1)),int(nt*((rank-1)+1)/(size-1))):
         E1 = M1 = E2 = M2 = 0
         config = initialstate(N, ps)
         iT=1.0/(T[tt]*0.08617)
 
         for i in range(eqSteps):         # equilibrate
             mcmove(config, iT, ps, A_data, B_data, C_data, D_data)           # Monte Carlo moves
+            comm.send(None,dest=0,tag=0)
 
         for i in range(mcSteps):
             mcmove(config, iT, ps, A_data, B_data, C_data, D_data)
             Mag = calcMag(config)        # calculate the magnetisation
 
             M1 = M1 + Mag
+            comm.send(None,dest=0,tag=0)
         #average Polarization
         M_1[tt] = n1*M1
+
+        # print(str(rank)+'fuck',flush=True)
 
     comm.send(M_1,dest=0,tag=rank)
 
 if rank == 0:
-    for i in range(0,size):
-        # collect all data from MPI process
-        M += comm.recv(source=i,tag=i)
+    # for i in tqdm(range(1,size),desc="total_% sub ",ncols=100):
+    remaining = size - 1
+    while remaining > 0:
+        s = MPI.Status()
+        comm.Probe(status=s)
+        if s.tag == 0:
+            comm.recv(tag=0)
+            pbar.update()
+        else:
+            # collect all data from MPI process
+            M += comm.recv(source=s.tag,tag=s.tag)
+            remaining -= 1
+    pbar.close()
     # Write data to Polarization.txt
     with open('Polarization.txt', 'w') as f:
             for i in range(nt):
@@ -164,4 +187,4 @@ if rank == 0:
     plt.ylabel("Magnetization ", fontsize=20);   plt.axis('tight');
 
     plt.savefig("MC.png")
-    print(" Done.")
+    print("\n\n Done.")

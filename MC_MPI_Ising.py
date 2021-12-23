@@ -99,37 +99,44 @@ n1, n2  = 1.0/(mcSteps*N*N), 1.0/(mcSteps*mcSteps*N*N)
 #  MAIN PART OF THE CODE
 #----------------------------------------------------------------------
 
-for tt in range(int(nt*rank/size),int(nt*(rank+1)/size)):
-    E1 = M1 = E2 = M2 = 0
-    config = initialstate(N)
-    iT=1.0/T[tt]; iT2=iT*iT;
+if nt < size-1:
+    if rank == 0:
+        print('**ERROR: More processes then the number of temperatrue points.')
+    exit()
 
-    for i in range(eqSteps):         # equilibrate
-        mcmove(config, iT, D_data)           # Monte Carlo moves
+if rank != 0:
+    for tt in range(int(nt*(rank-1)/(size-1)),int(nt*((rank-1)+1)/(size-1))):
+    # for tt in range(int(nt*rank/size),int(nt*(rank+1)/size)):
+        E1 = M1 = E2 = M2 = 0
+        config = initialstate(N)
+        iT=1.0/T[tt]; iT2=iT*iT;
 
-    for i in range(mcSteps):
-        mcmove(config, iT, D_data)
-        Ene = calcEnergy(config)     # calculate the energy
-        Mag = calcMag(config)        # calculate the magnetisation
+        for i in range(eqSteps):         # equilibrate
+            mcmove(config, iT, D_data)           # Monte Carlo moves
 
-        E1 = E1 + Ene
-        M1 = M1 + Mag
-        M2 = M2 + Mag*Mag
-        E2 = E2 + Ene*Ene
+        for i in range(mcSteps):
+            mcmove(config, iT, D_data)
+            Ene = calcEnergy(config)     # calculate the energy
+            Mag = calcMag(config)        # calculate the magnetisation
 
-    E_1[tt] = n1*E1
-    M_1[tt] = n1*M1
-    C_1[tt] = (n1*E2 - n2*E1*E1)*iT2
-    X_1[tt] = (n1*M2 - n2*M1*M1)*iT
+            E1 = E1 + Ene
+            M1 = M1 + Mag
+            M2 = M2 + Mag*Mag
+            E2 = E2 + Ene*Ene
 
-comm.send(E_1,dest=0,tag=rank)
-comm.send(M_1,dest=0,tag=rank)
-comm.send(C_1,dest=0,tag=rank)
-comm.send(X_1,dest=0,tag=rank)
-#print(rank,E_1)
+        E_1[tt] = n1*E1
+        M_1[tt] = n1*M1
+        C_1[tt] = (n1*E2 - n2*E1*E1)*iT2
+        X_1[tt] = (n1*M2 - n2*M1*M1)*iT
+
+    comm.send(E_1,dest=0,tag=rank)
+    comm.send(M_1,dest=0,tag=rank)
+    comm.send(C_1,dest=0,tag=rank)
+    comm.send(X_1,dest=0,tag=rank)
+    #print(rank,E_1)
 
 if rank == 0:
-    for i in range(0,size):
+    for i in range(1,size):
         E += comm.recv(source=i,tag=i)
         M += comm.recv(source=i,tag=i)
         C += comm.recv(source=i,tag=i)
