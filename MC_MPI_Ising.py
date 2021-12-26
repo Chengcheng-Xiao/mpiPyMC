@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import division
+from tqdm.auto import tqdm
 import numpy as np
 from numpy.random import rand
 import matplotlib
@@ -104,6 +105,15 @@ if nt < size-1:
         print('**ERROR: More processes then the number of temperatrue points.')
     exit()
 
+if rank == 0:
+    print("                  _ ____        __  __  ____ \n"
+    "  _ __ ___  _ __ (_)  _ \ _   _|  \/  |/ ___|\n"
+    " | '_ ` _ \| '_ \| | |_) | | | | |\/| | |    \n"
+    " | | | | | | |_) | |  __/| |_| | |  | | |___ \n"
+    " |_| |_| |_| .__/|_|_|    \__, |_|  |_|\____|\n"
+    "           |_|            |___/  Ising mode  \n")
+    pbar = tqdm(total=nt*(eqSteps+mcSteps),desc="total_% ")
+
 if rank != 0:
     for tt in range(int(nt*(rank-1)/(size-1)),int(nt*((rank-1)+1)/(size-1))):
     # for tt in range(int(nt*rank/size),int(nt*(rank+1)/size)):
@@ -113,11 +123,13 @@ if rank != 0:
 
         for i in range(eqSteps):         # equilibrate
             mcmove(config, iT, D_data)           # Monte Carlo moves
+            comm.send(None,dest=0,tag=0)
 
         for i in range(mcSteps):
             mcmove(config, iT, D_data)
             Ene = calcEnergy(config)     # calculate the energy
             Mag = calcMag(config)        # calculate the magnetisation
+            comm.send(None,dest=0,tag=0)
 
             E1 = E1 + Ene
             M1 = M1 + Mag
@@ -136,14 +148,29 @@ if rank != 0:
     #print(rank,E_1)
 
 if rank == 0:
-    for i in range(1,size):
-        E += comm.recv(source=i,tag=i)
-        M += comm.recv(source=i,tag=i)
-        C += comm.recv(source=i,tag=i)
-        X += comm.recv(source=i,tag=i)
+    remaining = size - 1
+    while remaining > 0:
+        s = MPI.Status()
+        comm.Probe(status=s)
+        if s.tag == 0:
+            comm.recv(tag=0)
+            pbar.update()
+        else:
+            E += comm.recv(source=s.tag,tag=s.tag)
+            M += comm.recv(source=s.tag,tag=s.tag)
+            C += comm.recv(source=s.tag,tag=s.tag)
+            X += comm.recv(source=s.tag,tag=s.tag)
+            remaining -= 1
+    pbar.close()
+    
+    # for i in range(1,size):
+    #     E += comm.recv(source=i,tag=i)
+    #     M += comm.recv(source=i,tag=i)
+    #     C += comm.recv(source=i,tag=i)
+    #     X += comm.recv(source=i,tag=i)
     with open('Energy.txt', 'w') as f:
-	    for i in range(nt):
-		print("{0:4d} {1:5f}".format(i,E[i]),file=f)
+        for i in range(nt):
+            print("{0:4d} {1:5f}".format(i,E[i]),file=f)
     with open('Polarization.txt', 'w') as f:
             for i in range(nt):
                 print("{0:4d} {1:5f}".format(i,M[i]),file=f)
@@ -177,3 +204,5 @@ if rank == 0:
     plt.ylabel("Susceptibility", fontsize=20);   plt.axis('tight');
     #plt.show()
     plt.savefig("MC.png")
+
+    print("\n\n Done.")
